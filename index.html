@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#004470" />
+    <meta name="theme-color" content="#f6f8fa" />
     <meta name="description" content="An interactive, entirely local learning lab for deterministic choices, probability, and generative sampling." />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>A probability playground</title>
@@ -12,37 +12,12 @@
     <a class="skip-link" href="#experiment">Skip to the experiment</a>
     <div class="site-shell">
       <main>
-        <section class="hero" aria-labelledby="page-title">
-          <div>
+        <section id="experiment" aria-label="The experiment" tabindex="-1">
+          <div class="hero">
+          <div class="hero-title">
             <p class="eyebrow"><span class="tiny-cross" aria-hidden="true">+</span> A probability playground</p>
             <h1 id="page-title">Same input.<br /><span>Different possibilities.</span></h1>
           </div>
-          <div class="hero-description">
-            <p>One prompt. Three ways to choose what comes next.<br class="desktop-break" /> Follow the paths and see probability in motion.</p>
-            <button class="tour-trigger" id="tour-toggle" aria-expanded="false" aria-controls="tour">
-              <span class="tour-trigger-icon" aria-hidden="true">?</span>
-              Walk me through <span aria-hidden="true">&rarr;</span>
-            </button>
-          </div>
-        </section>
-
-        <section class="tour-panel" id="tour" role="region" aria-label="Guided walkthrough" hidden>
-          <div class="tour-number" id="tour-progress">01 / 05</div>
-          <div class="tour-copy">
-            <h2 id="tour-title" tabindex="-1"></h2>
-            <p id="tour-description"></p>
-          </div>
-          <div class="tour-actions">
-            <button class="button button-small button-accent" id="tour-action">Try a run</button>
-            <div class="tour-navigation">
-              <button class="icon-button" id="tour-back" aria-label="Previous lesson">&larr;</button>
-              <button class="icon-button" id="tour-next" aria-label="Next lesson">&rarr;</button>
-              <button class="icon-button" id="tour-close" aria-label="Close walkthrough">&times;</button>
-            </div>
-          </div>
-        </section>
-
-        <section id="experiment" aria-label="The experiment" tabindex="-1">
           <div class="experiment-controls" id="shared-input">
             <div class="prompt-row">
               <div class="prompt-copy">
@@ -82,6 +57,7 @@
                 <span id="run-progress" aria-hidden="true"></span>
               </div>
             </div>
+          </div>
           </div>
           <div class="error-notice" id="runtime-error" role="alert" hidden></div>
 
@@ -179,16 +155,6 @@
           <button class="text-button" id="show-all" hidden>Show all outcomes</button>
         </section>
 
-        <section class="learning-notes" id="how-it-works" aria-label="What this demo teaches">
-          <article>
-            <h2>A small model. A clear window.</h2>
-            <p>This demo uses <strong>hand-authored conditional probabilities</strong>, not a trained AI. Each decision selects a word or phrase; real language models use tokens, which may be parts of words. We are illustrating output selection, not training, reasoning, accuracy, or a model&rsquo;s internal workings. No API calls. No data leaves your browser.</p>
-          </article>
-        </section>
-        <div class="closing-note">
-          <p>Repeatable doesn&rsquo;t mean correct.<br /><span>Probabilistic doesn&rsquo;t mean arbitrary.</span></p>
-          <svg viewBox="0 0 100 65" fill="none" aria-hidden="true"><path d="M4 33h25c20 0 19-24 38-24h27M29 33h65M29 33c20 0 19 24 38 24h27" stroke="currentColor" stroke-width="1.4" /><circle cx="94" cy="9" r="3" fill="currentColor" /><circle cx="94" cy="33" r="3" fill="currentColor" /><circle cx="94" cy="57" r="3" fill="currentColor" /></svg>
-        </div>
       </main>
 
     </div>

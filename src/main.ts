@@ -170,7 +170,6 @@ function renderControls(): void {
   setText('playback-status', status);
   setText('run-progress', playback && playback.batch.length > 1
     ? `${String(playback.index + 1).padStart(2, '0')} / ${playback.batch.length}` : '');
-  get('tour-action', HTMLButtonElement).disabled = Boolean(playback);
   seedInput.disabled = !seedLock.checked;
   setText('seed-help', seedLock.checked
     ? 'Same seed, same sequence on each click. A batch still varies within its sequence.'
@@ -501,99 +500,6 @@ reducedMotion.addEventListener('change', () => {
   renderControls();
 });
 
-interface Lesson {
-  title: string;
-  description: string;
-  focus: string;
-  actionLabel: string;
-  action: 'once' | 'batch' | 'lock';
-}
-
-const LESSONS: readonly Lesson[] = [
-  {
-    title: 'Start with exactly the same input.',
-    description: 'All three lanes receive the same story prompt. Run a comparison and follow the light through three word-or-phrase decisions. Use pause or step whenever you want to slow down.',
-    focus: 'shared-input', actionLabel: 'Run one comparison', action: 'once',
-  },
-  {
-    title: 'A recipe follows instructions.',
-    description: 'The rules lane has a route written in advance: choose these pieces for this preset. Repeating the input repeats the output. Consistency tells us nothing about whether a rule is correct.',
-    focus: 'rules-lane', actionLabel: 'Repeat the experiment', action: 'once',
-  },
-  {
-    title: 'Probabilities do not require randomness.',
-    description: 'The middle lane calculates several probabilities, then always chooses the largest. The selection is deterministic even though the model describes uncertainty. Generative models can use this kind of decoding too.',
-    focus: 'greedy-lane', actionLabel: 'Watch the top choice', action: 'once',
-  },
-  {
-    title: 'Sampling makes room for alternatives.',
-    description: 'The third lane uses the same conditional probability model, but makes a weighted draw. Try 50 runs: fixed routes overlap, while sampled futures branch out. Temperature changes the odds, not the model knowledge.',
-    focus: 'sample-lane', actionLabel: 'Try 50 comparisons', action: 'batch',
-  },
-  {
-    title: 'Even randomness can be replayed.',
-    description: 'Lock a seed and repeat a single run: the same choices return. A locked batch replays the entire sequence, not one identical answer 50 times. Prompt, temperature, and seed must all stay the same.',
-    focus: 'tuning', actionLabel: 'Lock seed and try it', action: 'lock',
-  },
-];
-
-let lessonIndex = 0;
-const tour = get('tour', HTMLElement);
-const tourToggle = get('tour-toggle', HTMLButtonElement);
-
-function renderTour(): void {
-  const lesson = LESSONS[lessonIndex];
-  if (!lesson) throw new Error('The requested walkthrough lesson is missing.');
-  setText('tour-progress', `${String(lessonIndex + 1).padStart(2, '0')} / 05`);
-  setText('tour-title', lesson.title);
-  setText('tour-description', lesson.description);
-  setText('tour-action', lesson.actionLabel);
-  get('tour-back', HTMLButtonElement).disabled = lessonIndex === 0;
-  get('tour-next', HTMLButtonElement).setAttribute('aria-label', lessonIndex === LESSONS.length - 1 ? 'Finish walkthrough' : 'Next lesson');
-  document.querySelectorAll('.is-spotlit').forEach((element) => element.classList.remove('is-spotlit'));
-  if (!tour.hidden) get(lesson.focus, HTMLElement).classList.add('is-spotlit');
-}
-
-function closeTour(): void {
-  tour.hidden = true;
-  tourToggle.setAttribute('aria-expanded', 'false');
-  renderTour();
-  tourToggle.focus();
-}
-
-tourToggle.addEventListener('click', () => {
-  if (!tour.hidden) closeTour();
-  else {
-    tour.hidden = false;
-    tourToggle.setAttribute('aria-expanded', 'true');
-    renderTour();
-    get('tour-title', HTMLHeadingElement).focus();
-  }
-});
-get('tour-close', HTMLButtonElement).addEventListener('click', closeTour);
-get('tour-next', HTMLButtonElement).addEventListener('click', () => {
-  if (lessonIndex === LESSONS.length - 1) closeTour();
-  else {
-    lessonIndex++;
-    renderTour();
-    get('tour-title', HTMLHeadingElement).focus();
-  }
-});
-get('tour-back', HTMLButtonElement).addEventListener('click', () => {
-  if (lessonIndex > 0) lessonIndex--;
-  renderTour();
-  get('tour-title', HTMLHeadingElement).focus();
-});
-get('tour-action', HTMLButtonElement).addEventListener('click', () => {
-  const lesson = LESSONS[lessonIndex];
-  if (!lesson) throw new Error('The walkthrough action is missing.');
-  if (lesson.action === 'lock') {
-    seedLock.checked = true;
-    resetExperiment();
-  }
-  startRun(lesson.action === 'batch' ? 50 : 1);
-});
-
 window.addEventListener('error', (event) => {
   cancelFrame();
   playback = undefined;
@@ -603,4 +509,3 @@ window.addEventListener('error', (event) => {
 });
 
 resetExperiment();
-renderTour();

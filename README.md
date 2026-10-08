@@ -10,15 +10,17 @@ The model and all experiment data stay in the browser.
 
 ## Visual presentation
 
-The interface uses the supplied Unum color palette: Blue (`#015294`) for the
-primary action, dark Blue (`#004470`) and Slate (`#26495f`) for diagram surfaces,
-Pool (`#bbdee1`), Sky (`#a1d3ea`), and Gold (`#fac832`) for the three lanes,
-and neutral shades for readable text and boundaries.
+The interface uses a light Unum palette: a cool-neutral canvas (`#f6f8fa`),
+white diagram panels, Blue (`#015294`) for the primary action, and dark
+Pool (`#017f90`), Blue (`#015294`), and Orange (`#b75d24`) for readable lane
+accents. Slate text and pale Sky surfaces maintain contrast.
 
 Sampled paths, tiles, and story markers share a stable mapping to 27 distinct
 palette shades, one per possible story. Color is supplemented by readable
-output text and counts. The branded top bar, traditional-versus-AI article,
-and site footer are omitted; the toy-model disclosure and walkthrough remain.
+output text and counts. The title and compact shared-input card occupy one
+desktop row and stack on smaller screens. The top introduction, walkthrough,
+bottom explanatory text, branded top bar, and site footer are omitted.
+A compact hand-authored toy-model disclosure remains beside the diagrams.
 The reference image and source presentation are not published with the app.
 
 ## Run locally
@@ -112,8 +114,6 @@ for repository setup and deployment permissions.
    and temperature replay the same choices. A locked batch replays the complete
    random sequence; it does **not** produce one identical sampled answer 50 times.
 
-**Walk me through** provides this explanation inside the app.
-
 Changing the prompt, temperature, seed, or seed-lock setting cancels any
 in-flight animation and clears the old experiment. **Reset experiment** clears
 results but preserves settings. Repeated run clicks otherwise accumulate results.
@@ -172,7 +172,7 @@ npm run test:pages
 Unit tests cover normalization, temperature, weighted draws, context-dependent
 transitions, seeded replay, invalid inputs, and bounded history. Playwright tests
 exercise the actual browser controls, output variation, seed validation, batch
-replay, animation cancellation, manual stepping, the walkthrough, mobile layout,
+replay, animation cancellation, manual stepping, compact header alignment, mobile layout,
 reduced motion, and the absence of external requests or runtime errors.
 The Pages suite additionally exercises the built artifact at a repository
 subpath. Run the browser suites sequentially; they share the local test-results
@@ -186,5 +186,5 @@ directory.
   sampling, and experiment history.
 - [Visualizations](./src/visualization.ts): SVG branches, trails, and pulses.
 - [Interface](./src/main.ts): playback, controls, probability inspection,
-  mosaics, and the walkthrough.
+  mosaics, and sampled outcome cards.
 - [Styles](./src/style.css): responsive design and reduced-motion behavior.

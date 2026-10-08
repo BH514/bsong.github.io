@@ -5,16 +5,17 @@ test('keeps the learning lab without the branded header, comparison essay, or si
   await expect(page.getByRole('banner')).toHaveCount(0);
   await expect(page.getByRole('contentinfo')).toHaveCount(0);
   await expect(page.getByRole('heading', { name: /Not simply/ })).toHaveCount(0);
-  await expect(page.getByRole('heading', { name: 'A small model. A clear window.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'A small model. A clear window.' })).toHaveCount(0);
+  await expect(page.getByText('Repeatable doesn’t mean correct.')).toHaveCount(0);
   await expect(page.getByRole('heading', { name: /Same input/ })).toBeVisible();
 });
 
 test('uses the supplied brand colors consistently without merging distinct sampled outputs', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('#run-once')).toHaveCSS('background-color', 'rgb(1, 82, 148)');
-  await expect(page.locator('#rules-plot .plot-root')).toHaveCSS('fill', 'rgb(187, 222, 225)');
-  await expect(page.locator('#greedy-plot .plot-root')).toHaveCSS('fill', 'rgb(161, 211, 234)');
-  await expect(page.locator('#sample-plot .plot-root')).toHaveCSS('fill', 'rgb(250, 200, 50)');
+  await expect(page.locator('#rules-plot .plot-root')).toHaveCSS('fill', 'rgb(1, 127, 144)');
+  await expect(page.locator('#greedy-plot .plot-root')).toHaveCSS('fill', 'rgb(1, 82, 148)');
+  await expect(page.locator('#sample-plot .plot-root')).toHaveCSS('fill', 'rgb(183, 93, 36)');
   await page.getByLabel('Lock random seed').check();
   await page.getByLabel('Random seed', { exact: true }).fill('42');
   await page.getByRole('button', { name: 'Run 50', exact: true }).click();
@@ -214,15 +215,44 @@ test('a new curated prompt clears the old experiment and drives every lane', asy
   }
 });
 
-test('the guided walkthrough can be navigated and dismissed', async ({ page }) => {
+test('uses a light canvas without the top introduction or walkthrough', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Walk me through' }).click();
-  await expect(page.getByRole('region', { name: 'Guided walkthrough' })).toBeVisible();
-  await expect(page.locator('#tour-progress')).toHaveText('01 / 05');
-  await page.getByRole('button', { name: 'Next lesson' }).click();
-  await expect(page.locator('#tour-progress')).toHaveText('02 / 05');
-  await page.getByRole('button', { name: 'Close walkthrough' }).click();
-  await expect(page.getByRole('region', { name: 'Guided walkthrough' })).toBeHidden();
+  await expect(page.locator('html')).toHaveCSS('background-color', 'rgb(246, 248, 250)');
+  await expect(page.locator('.lane').first()).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+  await expect(page.getByRole('button', { name: 'Walk me through' })).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Guided walkthrough' })).toHaveCount(0);
+  await expect(page.getByText('One prompt. Three ways to choose what comes next.')).toHaveCount(0);
+  await expect(page.getByText('Hand-authored toy model')).toBeVisible();
+});
+
+test('places the shared input beside the title in one compact desktop row', async ({ page }) => {
+  await page.goto('/');
+  for (const width of [1280, 1440, 1920]) {
+    await page.setViewportSize({ width, height: 1000 });
+    for (const prompt of ['robot', 'ocean', 'space']) {
+      await page.getByLabel('Story prompt').selectOption(prompt);
+      const title = await page.locator('#page-title').boundingBox();
+      const card = await page.locator('#shared-input').boundingBox();
+      const hero = await page.locator('.hero').boundingBox();
+      if (!title || !card || !hero) throw new Error('The title and controls must be visible.');
+      expect(card.x).toBeGreaterThan(title.x + title.width);
+      expect(Math.abs(title.y + title.height / 2 - card.y - card.height / 2)).toBeLessThan(25);
+      expect(card.x + card.width).toBeLessThanOrEqual(hero.x + hero.width + 1);
+      expect(hero.height).toBeLessThan(240);
+    }
+  }
+});
+
+test('stacks the compact header on mobile without clipping its controls', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  const title = await page.locator('#page-title').boundingBox();
+  const card = await page.locator('#shared-input').boundingBox();
+  if (!title || !card) throw new Error('The title and controls must be visible.');
+  expect(card.y).toBeGreaterThan(title.y + title.height);
+  await page.getByLabel('Story prompt').selectOption('space');
+  await page.getByRole('button', { name: 'Run 50', exact: true }).click();
+  await expect(page.locator('#total-runs')).toHaveText('50');
 });
 
 test('mobile preserves the experiment without horizontal overflow', async ({ page }) => {
