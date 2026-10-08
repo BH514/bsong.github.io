@@ -25,6 +25,13 @@ interface PlotOptions {
 const ROOT: Point = { x: 18, y: 120 };
 const COLUMNS = [92, 196, 302];
 const ROWS = [55, 120, 185];
+const OUTCOME_COLORS = [
+  '#47b4bc', '#fac832', '#78a5d1', '#8cc342', '#00a6d7', '#f8d08a',
+  '#c3db6a', '#0199a6', '#b9d4e9', '#c0cf30', '#84a9bf', '#a4b638',
+  '#e99625', '#bbdee1', '#b6d890', '#3273af', '#bed2e0', '#0090c7',
+  '#318040', '#899d3b', '#e4f4f4', '#a1d3ea', '#fcefdf', '#dfe7ec',
+  '#5e88a1', '#d67921', '#037cb7',
+] as const;
 
 function svgElement<K extends keyof SVGElementTagNameMap>(
   tag: K,
@@ -83,7 +90,9 @@ export function outcomeColor(result: RunResult): string {
     if (index < 0) throw new Error('An output is missing its selected candidate.');
     return value * 3 + index;
   }, 0);
-  return `hsl(${(variant * 137.508 + 26) % 360} 52% 66%)`;
+  const color = OUTCOME_COLORS[variant];
+  if (!color) throw new Error('An output has no matching palette color.');
+  return color;
 }
 
 export function renderPlot(svg: SVGSVGElement, options: PlotOptions): PlotAnimation | undefined {

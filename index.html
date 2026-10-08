@@ -3,31 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#101615" />
+    <meta name="theme-color" content="#004470" />
     <meta name="description" content="An interactive, entirely local learning lab for deterministic choices, probability, and generative sampling." />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>Branching Futures - A probability playground</title>
+    <title>A probability playground</title>
   </head>
   <body>
     <a class="skip-link" href="#experiment">Skip to the experiment</a>
     <div class="site-shell">
-      <header class="site-header">
-        <a class="brand" href="#" aria-label="Branching Futures home">
-          <svg class="brand-mark" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-            <path d="M5 25 15 16M15 16 26 5M15 16h11M15 16l11 10" stroke="currentColor" stroke-width="1.5" />
-            <circle cx="5" cy="25" r="3" fill="currentColor" />
-            <circle cx="26" cy="5" r="3" fill="currentColor" />
-            <circle cx="26" cy="16" r="3" fill="currentColor" />
-            <circle cx="26" cy="26" r="3" fill="currentColor" />
-          </svg>
-          <span>branching<span class="brand-light">futures</span></span>
-        </a>
-        <nav aria-label="Main navigation">
-          <a class="text-link" href="#how-it-works">Behind the experiment <span aria-hidden="true">&nearr;</span></a>
-          <span class="local-badge"><span class="status-dot"></span> Entirely local</span>
-        </nav>
-      </header>
-
       <main>
         <section class="hero" aria-labelledby="page-title">
           <div>
@@ -198,12 +181,6 @@
 
         <section class="learning-notes" id="how-it-works" aria-label="What this demo teaches">
           <article>
-            <span class="note-number">01</span>
-            <h2>Not simply &ldquo;traditional vs. AI.&rdquo;</h2>
-            <p><strong>Rules vs. learning</strong> describes how a system is built. <strong>Deterministic vs. sampled</strong> describes how it selects an output. Traditional ML often calculates probabilities, then picks the top label. Generative models can also pick the top next token, or sample instead.</p>
-          </article>
-          <article>
-            <span class="note-number">02</span>
             <h2>A small model. A clear window.</h2>
             <p>This demo uses <strong>hand-authored conditional probabilities</strong>, not a trained AI. Each decision selects a word or phrase; real language models use tokens, which may be parts of words. We are illustrating output selection, not training, reasoning, accuracy, or a model&rsquo;s internal workings. No API calls. No data leaves your browser.</p>
           </article>
@@ -214,10 +191,6 @@
         </div>
       </main>
 
-      <footer class="site-footer">
-        <span>Branching Futures <span class="footer-divider">/</span> Built for curiosity.</span>
-        <span><span class="status-dot"></span> No keys. No APIs. Just possibilities.</span>
-      </footer>
     </div>
     <noscript>This interactive learning lab needs JavaScript. All calculations run locally in your browser.</noscript>
     <script type="module" src="/src/main.ts"></script>

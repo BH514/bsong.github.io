@@ -39,8 +39,10 @@ test('the production app loads, runs, and reloads beneath a repository path', as
   expect(Number(await page.locator('#sample-unique').textContent())).toBeGreaterThan(1);
   await expect(page.locator('#sample-mosaic .mosaic-tile')).toHaveCount(50);
 
-  await page.getByRole('link', { name: 'Behind the experiment' }).click();
-  await expect(page).toHaveURL(`${baseURL}#how-it-works`);
+  const skipLink = page.getByRole('link', { name: 'Skip to the experiment' });
+  await skipLink.focus();
+  await skipLink.press('Enter');
+  await expect(page).toHaveURL(`${baseURL}#experiment`);
   await page.reload();
   await expect(page.locator('.lane')).toHaveCount(3);
   await expect(page.locator('#total-runs')).toHaveText('0');

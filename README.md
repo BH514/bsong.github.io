@@ -8,6 +8,19 @@ readable stories.
 **No live AI, API keys, backend, analytics, remote fonts, or runtime dependencies.**
 The model and all experiment data stay in the browser.
 
+## Visual presentation
+
+The interface uses the supplied Unum color palette: Blue (`#015294`) for the
+primary action, dark Blue (`#004470`) and Slate (`#26495f`) for diagram surfaces,
+Pool (`#bbdee1`), Sky (`#a1d3ea`), and Gold (`#fac832`) for the three lanes,
+and neutral shades for readable text and boundaries.
+
+Sampled paths, tiles, and story markers share a stable mapping to 27 distinct
+palette shades, one per possible story. Color is supplemented by readable
+output text and counts. The branded top bar, traditional-versus-AI article,
+and site footer are omitted; the toy-model disclosure and walkthrough remain.
+The reference image and source presentation are not published with the app.
+
 ## Run locally
 
 Requires Node.js 22.18 or newer and a current browser.

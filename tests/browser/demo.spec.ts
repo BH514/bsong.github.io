@@ -1,5 +1,105 @@
 import { expect, test, type Page } from '@playwright/test';
 
+test('keeps the learning lab without the branded header, comparison essay, or site footer', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('banner')).toHaveCount(0);
+  await expect(page.getByRole('contentinfo')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: /Not simply/ })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'A small model. A clear window.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Same input/ })).toBeVisible();
+});
+
+test('uses the supplied brand colors consistently without merging distinct sampled outputs', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#run-once')).toHaveCSS('background-color', 'rgb(1, 82, 148)');
+  await expect(page.locator('#rules-plot .plot-root')).toHaveCSS('fill', 'rgb(187, 222, 225)');
+  await expect(page.locator('#greedy-plot .plot-root')).toHaveCSS('fill', 'rgb(161, 211, 234)');
+  await expect(page.locator('#sample-plot .plot-root')).toHaveCSS('fill', 'rgb(250, 200, 50)');
+  await page.getByLabel('Lock random seed').check();
+  await page.getByLabel('Random seed', { exact: true }).fill('42');
+  await page.getByRole('button', { name: 'Run 50', exact: true }).click();
+  const mapping = await page.locator('#sample-mosaic .mosaic-tile').evaluateAll((tiles) => {
+    const pairs = tiles.map((tile) => ({
+      story: tile.getAttribute('title')?.replace(/^Run \d+: /, ''),
+      color: getComputedStyle(tile).backgroundColor,
+    }));
+    return pairs;
+  });
+  const byStory = new Map<string, string>();
+  const approved = new Set([
+    '#47b4bc', '#fac832', '#78a5d1', '#8cc342', '#00a6d7', '#f8d08a',
+    '#c3db6a', '#0199a6', '#b9d4e9', '#c0cf30', '#84a9bf', '#a4b638',
+    '#e99625', '#bbdee1', '#b6d890', '#3273af', '#bed2e0', '#0090c7',
+    '#318040', '#899d3b', '#e4f4f4', '#a1d3ea', '#fcefdf', '#dfe7ec',
+    '#5e88a1', '#d67921', '#037cb7',
+  ].map((hex) => {
+    const value = Number.parseInt(hex.slice(1), 16);
+    return `rgb(${value >> 16}, ${(value >> 8) & 255}, ${value & 255})`;
+  }));
+  for (const { story, color } of mapping) {
+    if (!story) throw new Error('A sampled tile must describe its outcome.');
+    expect(approved.has(color), `Unapproved outcome color ${color}`).toBe(true);
+    const previous = byStory.get(story);
+    if (previous) expect(color).toBe(previous);
+    byStory.set(story, color);
+  }
+  expect(new Set(byStory.values()).size).toBe(byStory.size);
+  await page.getByRole('button', { name: /Show all \d+ outcomes/ }).click();
+  const cards = await page.locator('.outcome-card').evaluateAll((elements) => elements.map((card) => ({
+    story: card.querySelector('p')?.textContent,
+    color: getComputedStyle(card.querySelector('.outcome-dot')!).backgroundColor,
+  })));
+  for (const card of cards) expect(card.color).toBe(byStory.get(card.story ?? ''));
+});
+
+test('keeps small text and diagram labels readable on the brand surfaces', async ({ page }) => {
+  await page.goto('/');
+  const contrasts = await page.locator(
+    '.lane-heading > p, .plot-label, .fine-print, .control-explanation, .settings-note, '
+    + '.probability-label, .probability-value, .output-text.is-waiting, #run-once',
+  ).evaluateAll((elements) => {
+    function channels(color: string): number[] {
+      const values = color.match(/[\d.]+/g);
+      if (!values) throw new Error(`Cannot measure color: ${color}`);
+      return values.map(Number);
+    }
+    function luminance(rgb: number[]): number {
+      return rgb.slice(0, 3).reduce((total, value, index) => {
+        const scaled = value / 255;
+        const linear = scaled <= 0.04045 ? scaled / 12.92 : ((scaled + 0.055) / 1.055) ** 2.4;
+        return total + linear * [0.2126, 0.7152, 0.0722][index]!;
+      }, 0);
+    }
+    return elements.map((element) => {
+      const style = getComputedStyle(element);
+      const foreground = channels(element instanceof SVGElement ? style.fill : style.color);
+      let opacity = 1;
+      let background: number[] | undefined;
+      for (let parent: Element | null = element; parent; parent = parent.parentElement) {
+        const parentStyle = getComputedStyle(parent);
+        opacity *= Number(parentStyle.opacity);
+        const color = channels(parentStyle.backgroundColor);
+        if (color.length === 3 || color[3] === 1) {
+          background = color;
+          break;
+        }
+      }
+      if (!background) throw new Error('Readable text needs a known background.');
+      const effective = foreground.map((value, index) => value * opacity + background[index]! * (1 - opacity));
+      const light = luminance(effective);
+      const dark = luminance(background);
+      return {
+        element: element.id || element.className.toString(),
+        ratio: (Math.max(light, dark) + 0.05) / (Math.min(light, dark) + 0.05),
+      };
+    });
+  });
+  expect(contrasts.length).toBeGreaterThan(15);
+  for (const { element, ratio } of contrasts) {
+    expect(ratio, `${element} must meet 4.5:1 text contrast`).toBeGreaterThanOrEqual(4.5);
+  }
+});
+
 async function setTemperature(page: Page, value: string) {
   await page.getByLabel('Temperature', { exact: true }).evaluate((element, next) => {
     if (!(element instanceof HTMLInputElement)) throw new Error('Expected a range input');
