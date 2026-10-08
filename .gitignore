@@ -1,0 +1,12 @@
+node_modules/
+dist/
+test-results/
+playwright-report/
+.DS_Store
+
+# Source presentations stay local, outside the publishable app.
+*.ppt
+*.pptx
+*.pptm
+*.potx
+*.ppsx
