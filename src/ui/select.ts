@@ -4,6 +4,17 @@ import { TAGS } from '../data/tags.ts'
 import type { TagId } from '../data/types.ts'
 import { renderSvgParts } from './svg.ts'
 
+/**
+ * The radiogroup pattern expects both axes, and the roster wraps to a 2–3
+ * column grid on narrow screens, where up and down are the obvious keys.
+ */
+const ARROW_STEPS: ReadonlyMap<string, number> = new Map([
+  ['ArrowRight', 1],
+  ['ArrowDown', 1],
+  ['ArrowLeft', -1],
+  ['ArrowUp', -1],
+])
+
 export interface SelectOptions {
   readonly chefs: readonly [ChefId | null, ChefId | null]
   readonly excluded: readonly TagId[]
@@ -132,17 +143,6 @@ function renderChefOption(
 
   return option
 }
-
-/**
- * The radiogroup pattern expects both axes, and the roster wraps to a 2–3
- * column grid on narrow screens, where up and down are the obvious keys.
- */
-const ARROW_STEPS: ReadonlyMap<string, number> = new Map([
-  ['ArrowRight', 1],
-  ['ArrowDown', 1],
-  ['ArrowLeft', -1],
-  ['ArrowUp', -1],
-])
 
 function renderStart(options: SelectOptions): HTMLElement {
   const start = document.createElement('button')
