@@ -105,6 +105,37 @@ test('excluding dairy removes butter from the shelf', async ({ page }) => {
   await expect(page.locator('.shelf')).not.toContainText(/butter/i)
 })
 
+/**
+ * Spec §12's one guarantee that had no coverage: the panels and the counter
+ * strip reserve their worst case, so a deal swaps content without moving
+ * anything below it.
+ */
+function reservedHeights(page: Page) {
+  return page.evaluate(() => {
+    const height = (selector: string): number => {
+      const node = document.querySelector(selector)
+      return node === null ? -1 : node.getBoundingClientRect().height
+    }
+    return { pan: height('.pan'), panTwo: height('.pan[data-player="2"]'), ctiles: height('.ctiles') }
+  })
+}
+
+for (const width of [1440, 375]) {
+  test(`dealing moves nothing at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 })
+    await enterKitchen(page)
+    const before = await reservedHeights(page)
+    expect(before.pan).toBeGreaterThan(0)
+    expect(before.ctiles).toBeGreaterThan(0)
+
+    for (let round = 0; round < 6; round += 1) {
+      await page.getByRole('button', { name: /^deal$/i }).click()
+      await expect(page.locator('.ctile')).toHaveCount(10)
+      expect(await reservedHeights(page), `round ${round + 1} reflowed`).toEqual(before)
+    }
+  })
+}
+
 test('tapping a figurine returns to chef select', async ({ page }) => {
   await enterKitchen(page)
   await page.locator('.figurine button').first().click()

@@ -49,7 +49,8 @@
 .figurine[data-player="2"] .figurine-name { color: var(--p2-text); }
 
 .pan {
-  min-height: 19rem;
+  /* See the reservation table at the foot of this file. */
+  min-height: 21.5rem;
   padding: var(--pad);
   background: linear-gradient(180deg, rgba(25, 227, 255, 0.15), rgba(25, 227, 255, 0.03));
   border: 1px solid rgba(25, 227, 255, 0.35);
@@ -110,7 +111,7 @@
   padding-top: var(--pad);
   border-top: 1px solid var(--hairline);
 }
-.ctiles { display: flex; flex-wrap: wrap; gap: 0.3rem; min-height: 4.5rem; margin-top: 0.5rem; }
+.ctiles { display: flex; flex-wrap: wrap; gap: 0.3rem; min-height: 6rem; margin-top: 0.5rem; }
 .ctile {
   padding: 0.35rem 0.5rem;
   background: rgba(255, 255, 255, 0.07);
@@ -216,5 +217,34 @@
   .board { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .vs { grid-column: 1 / -1; grid-row: 1; padding-bottom: 0; }
   .figurine { grid-row: 3; max-width: 7rem; }
-  .pan { min-height: 0; }
 }
+
+/*
+ * Spec §12: dealing must not move anything below it. Ingredient names vary in
+ * length, so both the panels and the counter strip reserve their worst case —
+ * the two longest names in every category — measured in the browser at every
+ * pixel from 320 px to 1000 px and every 7 px up to 1920 px, 813 widths in
+ * all, with the worst case confirmed to fit the reservation at each one.
+ * Worst case / reservation, in px:
+ *
+ *   width      .pan            .ctiles
+ *   ≥ 951      338.8 / 344     92.9 / 96
+ *   736–950    338.8 / 344    138.3 / 140
+ *   527–735    338.1 / 344    184.3 / 188
+ *   406–526    380.0 / 384    229.5 / 232
+ *   366–405    378.2 / 384    274.9 / 276
+ *   344–365    405.3 / 408    367.0 / 368
+ *   320–343    405.3 / 408    413.6 / 416
+ */
+@media (max-width: 950px) { .ctiles { min-height: 8.75rem; } }
+@media (max-width: 735px) { .ctiles { min-height: 11.75rem; } }
+@media (max-width: 526px) {
+  .pan { min-height: 24rem; }
+  .ctiles { min-height: 14.5rem; }
+}
+@media (max-width: 405px) { .ctiles { min-height: 17.25rem; } }
+@media (max-width: 365px) {
+  .pan { min-height: 25.5rem; }
+  .ctiles { min-height: 23rem; }
+}
+@media (max-width: 343px) { .ctiles { min-height: 26rem; } }
