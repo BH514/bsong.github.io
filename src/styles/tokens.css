@@ -11,6 +11,8 @@
   --panel: #111823;
   --panel-raised: #1b2432;
   --hairline: rgba(255, 255, 255, 0.12);
+  /* A control boundary, so WCAG 1.4.11 wants 3:1 — this is 3.8:1 on --ground-top. */
+  --control-edge: rgba(255, 255, 255, 0.4);
   --text: #e8f4ff;
   --text-dim: #8fb3c9;
 

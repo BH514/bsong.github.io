@@ -83,7 +83,7 @@
 .pan[data-player="2"] .slot { border-inline-start-color: var(--p2-graphic); }
 .slot-icon { flex: 0 0 1.5rem; font-size: var(--step-1); text-align: center; }
 .slot-name { display: block; font: 400 var(--step-1) / 1.15 var(--display); text-transform: uppercase; }
-.slot-category {
+.slot-category, .ctile-category {
   display: block;
   font: 700 var(--step-0) / 1.4 var(--mono);
   letter-spacing: 0.14em;
@@ -109,10 +109,13 @@
 .ctiles { display: flex; flex-wrap: wrap; gap: 0.3rem; min-height: 4.5rem; margin-top: 0.5rem; }
 .ctile {
   padding: 0.35rem 0.5rem;
-  font: 400 var(--step-1) / 1 var(--display);
-  text-transform: uppercase;
   background: rgba(255, 255, 255, 0.07);
   border: 1px solid var(--hairline);
+}
+.ctile-name {
+  display: block;
+  font: 400 var(--step-1) / 1 var(--display);
+  text-transform: uppercase;
 }
 .shelf {
   margin-top: var(--gap);

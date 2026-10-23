@@ -7,6 +7,9 @@ import { excludeTags } from '../filters.ts'
 import type { Ingredient, TagId } from '../data/types.ts'
 import { renderSvgParts } from './svg.ts'
 
+/** Spec §11: counter tiles pop in on a 40 ms stagger. */
+const TILE_STAGGER_MS = 40
+
 export interface StageOptions {
   readonly chefs: readonly [ChefId, ChefId]
   readonly deal: Deal | null
@@ -37,7 +40,7 @@ export function renderStage(options: StageOptions): HTMLElement {
 }
 
 function renderHud(options: StageOptions): HTMLElement {
-  const hud = document.createElement('div')
+  const hud = document.createElement('header')
   hud.className = 'st-hud'
 
   const meta = document.createElement('span')
@@ -60,6 +63,8 @@ function renderHud(options: StageOptions): HTMLElement {
   deal.type = 'button'
   deal.textContent = 'Deal'
   deal.disabled = options.failure !== null
+  // The primary control, pressed repeatedly: it must survive its own re-render.
+  deal.dataset.focusKey = 'deal'
   deal.addEventListener('click', options.onDeal)
 
   hud.append(meta, logo, deal)
@@ -78,6 +83,9 @@ function renderFigurine(player: 0 | 1, options: StageOptions): HTMLElement {
   const button = document.createElement('button')
   button.type = 'button'
   button.setAttribute('aria-label', `${chef.name} — change chef`)
+  // Pressing this changes screen, so the key deliberately finds no match
+  // afterwards and focus lands on #app rather than on a control that is gone.
+  button.dataset.focusKey = `figurine-${player}`
   button.append(renderSvgParts(figurineParts(chef, utensil), FIGURINE_VIEWBOX))
 
   const name = document.createElement('span')
@@ -170,8 +178,18 @@ function renderCounter(options: StageOptions): HTMLElement {
   options.deal?.counter.forEach((ingredient, index) => {
     const tile = document.createElement('span')
     tile.className = 'ctile'
-    tile.style.animationDelay = `${index * 40}ms`
-    tile.textContent = ingredient.name
+    tile.style.animationDelay = `${index * TILE_STAGGER_MS}ms`
+
+    const name = document.createElement('span')
+    name.className = 'ctile-name'
+    name.textContent = ingredient.name
+    // Colour is never the only carrier of meaning: spec §10 wants the category
+    // in text on every ingredient, counter tiles included.
+    const category = document.createElement('span')
+    category.className = 'ctile-category'
+    category.textContent = CATEGORY_LABELS.get(ingredient.category) ?? ingredient.category
+
+    tile.append(name, category)
     tiles.append(tile)
   })
   wrapper.append(tiles)

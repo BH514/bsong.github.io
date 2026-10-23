@@ -39,6 +39,41 @@ test('dealing again changes the counter', async ({ page }) => {
   throw new Error('five deals produced an identical counter')
 })
 
+test('the deal button keeps focus after being pressed', async ({ page }) => {
+  await enterKitchen(page)
+  const deal = page.getByRole('button', { name: /^deal$/i })
+  await deal.focus()
+  await deal.press('Enter')
+  await expect(page.locator('.ctile')).toHaveCount(10)
+  await expect(deal).toBeFocused()
+  await deal.press('Enter')
+  await expect(deal).toBeFocused()
+})
+
+test('changing chef from a figurine moves focus to the main region', async ({ page }) => {
+  await enterKitchen(page)
+  const figurine = page.locator('.figurine button').first()
+  await figurine.focus()
+  await figurine.press('Enter')
+  await expect(page.getByRole('radiogroup')).toHaveCount(2)
+  await expect(page.locator('#app')).toBeFocused()
+})
+
+test('the stage heading sits in a header landmark', async ({ page }) => {
+  await enterKitchen(page)
+  await expect(page.locator('header.st-hud')).toHaveCount(1)
+  await expect(page.locator('header.st-hud h1')).toHaveCount(1)
+})
+
+test('every counter tile shows its category in text', async ({ page }) => {
+  await enterKitchen(page)
+  await page.getByRole('button', { name: /^deal$/i }).click()
+  const counter = page.locator('.ctiles')
+  for (const label of ['Protein', 'Vegetable', 'Starch', 'Aromatic', 'Wildcard']) {
+    await expect(counter.getByText(label, { exact: true })).toHaveCount(2)
+  }
+})
+
 test('every slot shows its category in text', async ({ page }) => {
   await enterKitchen(page)
   await page.getByRole('button', { name: /^deal$/i }).click()

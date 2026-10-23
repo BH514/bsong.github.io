@@ -15,7 +15,7 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   background: transparent;
-  border: 1px solid var(--hairline);
+  border: 1px solid var(--control-edge);
   border-radius: 4px;
   color: var(--text-dim);
   transition: background var(--fast), color var(--fast), border-color var(--fast);

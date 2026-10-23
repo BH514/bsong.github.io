@@ -33,6 +33,32 @@ test('arrow keys move the selection within a radiogroup', async ({ page }) => {
   await expect(group.getByRole('radio').nth(1)).toBeFocused()
 })
 
+test('up and down arrows also move the selection', async ({ page }) => {
+  await page.goto('/')
+  const group = page.getByRole('radiogroup').first()
+  await group.getByRole('radio').first().click()
+  await group.getByRole('radio').first().press('ArrowDown')
+  await expect(group.getByRole('radio').nth(1)).toHaveAttribute('aria-checked', 'true')
+  await group.getByRole('radio').nth(1).press('ArrowUp')
+  await expect(group.getByRole('radio').first()).toHaveAttribute('aria-checked', 'true')
+  await expect(group.getByRole('radio').first()).toBeFocused()
+})
+
+test('arrow keys wrap around both ends of the roster', async ({ page }) => {
+  await page.goto('/')
+  const group = page.getByRole('radiogroup').first()
+  await group.getByRole('radio').first().click()
+  await group.getByRole('radio').first().press('ArrowUp')
+  await expect(group.getByRole('radio').nth(5)).toHaveAttribute('aria-checked', 'true')
+  await group.getByRole('radio').nth(5).press('ArrowDown')
+  await expect(group.getByRole('radio').first()).toHaveAttribute('aria-checked', 'true')
+})
+
+test('the select heading sits in a header landmark', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.locator('header.select-head h1')).toHaveCount(1)
+})
+
 test('diet chips toggle their pressed state', async ({ page }) => {
   await page.goto('/')
   const chip = page.getByRole('button', { name: /^dairy$/i })

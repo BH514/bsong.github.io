@@ -27,7 +27,7 @@ export function renderSelect(options: SelectOptions): HTMLElement {
 }
 
 function renderHead(): HTMLElement {
-  const head = document.createElement('div')
+  const head = document.createElement('header')
   head.className = 'select-head'
 
   const eyebrow = document.createElement('p')
@@ -123,8 +123,8 @@ function renderChefOption(
 
   option.addEventListener('click', () => options.onPickChef(player, chef.id))
   option.addEventListener('keydown', (event) => {
-    const step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0
-    if (step === 0) return
+    const step = ARROW_STEPS.get(event.key)
+    if (step === undefined) return
     event.preventDefault()
     const next = ROSTER[(index + step + ROSTER.length) % ROSTER.length]
     if (next) options.onPickChef(player, next.id)
@@ -132,6 +132,17 @@ function renderChefOption(
 
   return option
 }
+
+/**
+ * The radiogroup pattern expects both axes, and the roster wraps to a 2–3
+ * column grid on narrow screens, where up and down are the obvious keys.
+ */
+const ARROW_STEPS: ReadonlyMap<string, number> = new Map([
+  ['ArrowRight', 1],
+  ['ArrowDown', 1],
+  ['ArrowLeft', -1],
+  ['ArrowUp', -1],
+])
 
 function renderStart(options: SelectOptions): HTMLElement {
   const start = document.createElement('button')

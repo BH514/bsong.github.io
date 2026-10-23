@@ -128,20 +128,32 @@ function render(): void {
   restoreFocus(focusKey)
 }
 
+/**
+ * Same-screen re-render restores the control; a screen change cannot, because
+ * the control no longer exists, so focus goes to #app (which carries
+ * tabindex="-1" for exactly this). An absent key is the test for the two.
+ */
 function restoreFocus(focusKey: string | undefined): void {
   if (focusKey === undefined) return
 
+  // Arrow keys move the selection, so the option that had focus is not the one
+  // that should receive it back — the newly checked radio is.
   const chefMatch = focusKey.match(/^chef-(\d+)-/)
   if (chefMatch && chefMatch[1]) {
     const player = Number(chefMatch[1])
     const selected = state.saved.chefs[player]
     if (selected) {
       app.querySelector<HTMLElement>(`[data-focus-key="chef-${player}-${selected}"]`)?.focus()
+      return
     }
-    return
   }
 
-  app.querySelector<HTMLElement>(`[data-focus-key="${focusKey}"]`)?.focus()
+  const target = app.querySelector<HTMLElement>(`[data-focus-key="${focusKey}"]`)
+  if (target) {
+    target.focus()
+    return
+  }
+  app.focus()
 }
 
 render()
