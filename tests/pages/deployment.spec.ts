@@ -31,6 +31,45 @@ test('the built app loads and deals under a repository subpath', async ({ page }
   expect(failures).toEqual([])
 })
 
+test('the built document carries an enforced content security policy', async ({ page }) => {
+  const html = await readFile(join('dist', 'index.html'), 'utf8')
+  expect(html).toMatch(/http-equiv="Content-Security-Policy"/)
+
+  await page.goto(BASE)
+  const blocked = await page.evaluate(() => new Promise<readonly string[]>((resolve) => {
+    const seen: string[] = []
+    document.addEventListener('securitypolicyviolation', (event) => {
+      seen.push(event.violatedDirective)
+    })
+    const style = document.createElement('style')
+    style.textContent = 'body { outline: 9px solid red }'
+    document.head.append(style)
+    const script = document.createElement('script')
+    script.textContent = 'window.name = "pwned"'
+    document.head.append(script)
+    const image = document.createElement('img')
+    image.src = 'https://example.com/pixel.png'
+    document.body.append(image)
+    setTimeout(() => resolve(seen), 500)
+  }))
+  expect(blocked).toContain('style-src-elem')
+  expect(blocked).toContain('script-src-elem')
+  expect(blocked).toContain('img-src')
+})
+
+test('the built app loads a favicon without a request', async ({ page }) => {
+  const requested: string[] = []
+  page.on('request', (request) => { requested.push(request.url()) })
+  await page.goto(BASE)
+  const icon = await page.evaluate(() => {
+    const link = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
+    return link === null ? null : link.getAttribute('href')
+  })
+  expect(icon, 'index.html declares no favicon, so the tab is blank').not.toBeNull()
+  expect(icon).toMatch(/^data:image\/svg\+xml,/)
+  expect(requested.filter((url) => /favicon/i.test(url))).toEqual([])
+})
+
 test('the artifact ships no presentation files', async () => {
   const entries = await readdir('dist', { recursive: true })
   const banned = entries.filter((name) => /\.(pptx?|pptm|potx|ppsx)$/i.test(String(name)))
