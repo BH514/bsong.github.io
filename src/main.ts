@@ -28,6 +28,14 @@ const root = document.querySelector<HTMLElement>('#app')
 if (!root) throw new Error('#app is missing from index.html')
 const app: HTMLElement = root
 
+const announcer = document.createElement('p')
+announcer.className = 'sr-only'
+announcer.setAttribute('role', 'status')
+announcer.setAttribute('aria-live', 'polite')
+document.body.append(announcer)
+
+const CATEGORY_LABELS = new Map(CATEGORIES.map((category) => [category.id, category.label]))
+
 const initial = loadSaved(window.localStorage)
 const bothPicked = initial.chefs[0] !== null && initial.chefs[1] !== null
 
@@ -53,10 +61,16 @@ function pantrySize(): number {
 function deal(): void {
   const result = dealCounter(PANTRY, state.saved.excluded, createRng(randomSeed()))
   if (isFailure(result)) {
+    const label = CATEGORY_LABELS.get(result.category) ?? result.category
+    announcer.textContent =
+      `${label} has only ${result.remaining} ingredient(s) left. ` +
+      `Turn one of these back on: ${state.saved.excluded.join(', ')}.`
     setState({ failure: result, deal: null })
     return
   }
   setState({ deal: result, failure: null, round: state.round + 1 })
+  announcer.textContent =
+    `Ten ingredients on the counter: ${result.counter.map((i) => i.name).join(', ')}.`
 }
 
 function renderSelectScreen(): void {
