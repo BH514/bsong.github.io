@@ -1,59 +1,110 @@
-import { readdir } from 'node:fs/promises';
-import { expect, test } from '@playwright/test';
+import { test, expect } from '@playwright/test'
+import { readdir, readFile } from 'node:fs/promises'
+import { join } from 'node:path'
 
-test('the production app loads, runs, and reloads beneath a repository path', async ({ page, baseURL }) => {
-  if (!baseURL) throw new Error('The Pages test needs a repository-style base URL.');
-  const mount = new URL(baseURL);
-  const escapedRequests: string[] = [];
-  const failedResponses: string[] = [];
-  const runtimeErrors: string[] = [];
-  page.on('request', (request) => {
-    const url = new URL(request.url());
-    if (url.origin !== mount.origin || !url.pathname.startsWith(mount.pathname)) {
-      escapedRequests.push(url.href);
-    }
-  });
+const BASE = 'http://127.0.0.1:4173/cooking-battle/'
+
+/**
+ * Every file a visitor can actually read, not just the JS. index.html holds
+ * the meta description and the noscript copy — the likeliest place a recipe
+ * phrase would land — and a CSS `content:` string would be just as visible.
+ */
+async function servedFiles(): Promise<readonly string[]> {
+  const entries = await readdir('dist', { recursive: true })
+  return entries
+    .map((entry) => String(entry))
+    .filter((name) => /\.(js|css|html)$/i.test(name))
+    .map((name) => join('dist', name))
+}
+
+test('the built app loads and deals under a repository subpath', async ({ page }) => {
+  const failures: string[] = []
   page.on('response', (response) => {
-    if (response.status() >= 400) failedResponses.push(`${response.status()} ${response.url()}`);
-  });
-  page.on('pageerror', (error) => runtimeErrors.push(error.message));
+    if (response.status() >= 400) failures.push(`${response.status()} ${response.url()}`)
+  })
+  await page.goto(BASE)
+  await page.getByRole('radiogroup').first().getByRole('radio').first().click()
+  await page.getByRole('radiogroup').last().getByRole('radio').nth(2).click()
+  await page.getByRole('button', { name: /to the kitchen/i }).click()
+  await page.getByRole('button', { name: /^deal$/i }).click()
+  await expect(page.locator('.ctile')).toHaveCount(10)
+  expect(failures).toEqual([])
+})
 
-  await page.goto('./');
-  expect(escapedRequests, 'Every asset must stay beneath the repository path').toEqual([]);
-  await expect(page).toHaveURL(baseURL);
-  await expect(page.locator('.lane')).toHaveCount(3);
-  await expect(page.locator('#lanes')).toHaveCSS('display', 'grid');
+test('the built document carries an enforced content security policy', async ({ page }) => {
+  const html = await readFile(join('dist', 'index.html'), 'utf8')
+  expect(html).toMatch(/http-equiv="Content-Security-Policy"/)
 
-  const icon = await page.locator('link[rel="icon"]').getAttribute('href');
-  if (!icon) throw new Error('The built page is missing its favicon.');
-  const iconURL = new URL(icon, page.url());
-  expect(iconURL.pathname.startsWith(mount.pathname)).toBe(true);
-  expect((await page.request.get(iconURL.href)).ok()).toBe(true);
+  await page.goto(BASE)
+  const blocked = await page.evaluate(() => new Promise<readonly string[]>((resolve) => {
+    const seen: string[] = []
+    document.addEventListener('securitypolicyviolation', (event) => {
+      seen.push(event.violatedDirective)
+    })
+    const style = document.createElement('style')
+    style.textContent = 'body { outline: 9px solid red }'
+    document.head.append(style)
+    const script = document.createElement('script')
+    script.textContent = 'window.name = "pwned"'
+    document.head.append(script)
+    const image = document.createElement('img')
+    image.src = 'https://example.com/pixel.png'
+    document.body.append(image)
+    setTimeout(() => resolve(seen), 500)
+  }))
+  expect(blocked).toContain('style-src-elem')
+  expect(blocked).toContain('script-src-elem')
+  expect(blocked).toContain('img-src')
+})
 
-  await page.getByLabel('Lock random seed').check();
-  await page.getByLabel('Random seed', { exact: true }).fill('42');
-  await page.getByRole('button', { name: 'Run 50', exact: true }).click();
-  await expect(page.locator('#total-runs')).toHaveText('50');
-  await expect(page.locator('#rules-unique')).toHaveText('1');
-  await expect(page.locator('#greedy-unique')).toHaveText('1');
-  expect(Number(await page.locator('#sample-unique').textContent())).toBeGreaterThan(1);
-  await expect(page.locator('#sample-mosaic .mosaic-tile')).toHaveCount(50);
+test('the built app loads a favicon without a request', async ({ page }) => {
+  const requested: string[] = []
+  page.on('request', (request) => { requested.push(request.url()) })
+  await page.goto(BASE)
+  const icon = await page.evaluate(() => {
+    const link = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
+    return link === null ? null : link.getAttribute('href')
+  })
+  expect(icon, 'index.html declares no favicon, so the tab is blank').not.toBeNull()
+  expect(icon).toMatch(/^data:image\/svg\+xml,/)
+  expect(requested.filter((url) => /favicon/i.test(url))).toEqual([])
+})
 
-  const skipLink = page.getByRole('link', { name: 'Skip to the experiment' });
-  await skipLink.focus();
-  await skipLink.press('Enter');
-  await expect(page).toHaveURL(`${baseURL}#experiment`);
-  await page.reload();
-  await expect(page.locator('.lane')).toHaveCount(3);
-  await expect(page.locator('#total-runs')).toHaveText('0');
-  expect(escapedRequests).toEqual([]);
-  expect(failedResponses).toEqual([]);
-  expect(runtimeErrors).toEqual([]);
-});
+test('the artifact ships no presentation files', async () => {
+  const entries = await readdir('dist', { recursive: true })
+  const banned = entries.filter((name) => /\.(pptx?|pptm|potx|ppsx)$/i.test(String(name)))
+  expect(banned).toEqual([])
+})
 
-test('the deployment artifact excludes source presentations', async () => {
-  const files = await readdir(new URL('../../dist/', import.meta.url), { recursive: true });
-  expect(files).toContain('index.html');
-  expect(files.some((file) => file.endsWith('.js'))).toBe(true);
-  expect(files.filter((file) => /\.(pptx?|pptm|potx|ppsx)$/i.test(file))).toEqual([]);
-});
+test('the artifact contains no recipe instructions', async () => {
+  const bundles = await servedFiles()
+  expect(bundles.length).toBeGreaterThan(0)
+
+  const forbidden = [
+    /\brecipes?\s+(for|:)/i, /\bhow to (make|cook)\b/i,
+    /\bpreheat\b/i, /\bsimmer\b/i, /\bserves \d/i,
+    /\bmarinate\b/i, /\bgarnish with\b/i, /\bmethod:/i, /\bstir[- ]fry\b/i,
+    // Spec §1 forbids recommending pairings; §13 forbids dish names.
+    /\bserve[sd]?\s+with\b/i,
+    /\bpairs?\s+(well\s+)?with\b/i,
+    /\bgoes well with\b/i,
+    /\bserving suggestion/i,
+  ]
+  for (const bundle of bundles) {
+    const source = await readFile(bundle, 'utf8')
+    for (const pattern of forbidden) {
+      expect(source, `${bundle} matched ${pattern}`).not.toMatch(pattern)
+    }
+  }
+})
+
+test('the artifact references no remote origins', async () => {
+  const bundles = await servedFiles()
+  expect(bundles.length).toBeGreaterThan(0)
+
+  for (const bundle of bundles) {
+    const source = await readFile(bundle, 'utf8')
+    expect(source, `${bundle} references a remote origin`)
+      .not.toMatch(/https?:\/\/(?!www\.w3\.org)/)
+  }
+})

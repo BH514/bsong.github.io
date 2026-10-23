@@ -10,3 +10,9 @@ playwright-report/
 *.pptm
 *.potx
 *.ppsx
+
+# The Branching Futures app is kept only as a local design reference.
+vs_ai_demo_ref/
+
+# Design mockups from brainstorming sessions. Never publish these.
+.superpowers/
