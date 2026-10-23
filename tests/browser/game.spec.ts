@@ -50,13 +50,74 @@ test('the stage is reachable directly on a return visit', async ({ page }) => {
   await expect(page.getByRole('button', { name: /^deal$/i })).toBeVisible()
 })
 
-test('reduced motion renders the counter with no animation', async ({ page }) => {
+/** Spec §11's four motions, read where each one applies. */
+function animationNames(page: Page) {
+  return page.evaluate(() => {
+    const read = (selector: string, pseudo: string | null = null): string => {
+      const node = document.querySelector(selector)
+      return node === null ? 'missing' : getComputedStyle(node, pseudo).animationName
+    }
+    return {
+      figurine: read('.figurine'),
+      vs: read('.vs'),
+      ring: read('.vs', '::after'),
+      pip: read('.pips i[data-filled="true"]'),
+      tile: read('.ctile'),
+    }
+  })
+}
+
+test('every specified motion is actually wired up', async ({ page }) => {
+  await enterKitchen(page)
+  const onArrival = await animationNames(page)
+  expect(onArrival.figurine, 'figurines do not slide in').not.toBe('none')
+  expect(onArrival.vs, 'the VS badge does not slam').not.toBe('none')
+  expect(onArrival.ring, 'the VS badge throws no shockwave ring').not.toBe('none')
+
+  await page.getByRole('button', { name: /^deal$/i }).click()
+  const afterDeal = await animationNames(page)
+  expect(afterDeal.pip, 'slot pips do not fill').not.toBe('none')
+  expect(afterDeal.tile, 'counter tiles do not pop in').not.toBe('none')
+})
+
+test('reduced motion removes every animation', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await enterKitchen(page)
+  const onArrival = await animationNames(page)
+  expect(onArrival.figurine).toBe('none')
+  expect(onArrival.vs).toBe('none')
+  expect(onArrival.ring).toBe('none')
+
+  await page.getByRole('button', { name: /^deal$/i }).click()
+  const afterDeal = await animationNames(page)
+  expect(afterDeal.pip).toBe('none')
+  expect(afterDeal.tile).toBe('none')
+})
+
+test('reduced motion still renders the dealt stage correctly', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await enterKitchen(page)
   await page.getByRole('button', { name: /^deal$/i }).click()
-  const animation = await page.locator('.ctile').first()
-    .evaluate((node) => getComputedStyle(node).animationName)
-  expect(animation).toBe('none')
+
+  const state = await page.evaluate(() => {
+    const pips = [...document.querySelectorAll<HTMLElement>('.pips i')]
+    const figurine = document.querySelector('.figurine')
+    const vs = document.querySelector('.vs')
+    return {
+      filled: pips.filter((pip) => pip.dataset['filled'] === 'true')
+        .map((pip) => getComputedStyle(pip).opacity),
+      figurineTransform: figurine && getComputedStyle(figurine).transform,
+      figurineOpacity: figurine && getComputedStyle(figurine).opacity,
+      vsOpacity: vs && getComputedStyle(vs).opacity,
+      ringContent: vs && getComputedStyle(vs, '::after').content,
+    }
+  })
+
+  expect(state.filled).toEqual(['1', '1', '1', '1', '1', '1', '1', '1', '1', '1'])
+  expect(state.figurineTransform).toBe('none')
+  expect(state.figurineOpacity).toBe('1')
+  expect(state.vsOpacity).toBe('1')
+  expect(state.ringContent, 'the shockwave ring must not exist at all').toBe('none')
 })
 
 test('the app makes no external network requests', async ({ page }) => {

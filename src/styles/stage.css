@@ -68,7 +68,8 @@
 .pan[data-player="2"] .pan-name { color: var(--p2-text); }
 
 .pips { display: flex; gap: 3px; margin-top: 0.5rem; }
-.pips i { flex: 1; height: 4px; background: var(--p1); }
+.pips i { flex: 1; height: 4px; background: var(--p1); opacity: 0.25; }
+.pips i[data-filled="true"] { opacity: 1; }
 .pan[data-player="2"] .pips i { background: var(--p2-graphic); }
 
 .slot {
@@ -92,6 +93,9 @@
 }
 
 .vs {
+  position: relative;
+  /* The shockwave is wider than this column, so it must wash over the panels. */
+  z-index: 1;
   display: grid;
   place-items: center;
   padding-bottom: 2rem;
@@ -145,11 +149,66 @@
   background: rgba(255, 59, 36, 0.08);
 }
 
+/*
+ * Spec §11, all four motions. transform / opacity only, every one of them
+ * declared inside this query so `reduce` never generates the ring at all and
+ * the static state below is what a reduced-motion visitor sees: pips filled,
+ * figurines in place, VS centred.
+ */
 @media (prefers-reduced-motion: no-preference) {
   .ctile { animation: pop var(--normal) var(--ease-out-expo) backwards; }
   @keyframes pop {
     from { opacity: 0; transform: translateY(6px) scale(0.96); }
     to { opacity: 1; transform: none; }
+  }
+
+  /* Each pip wipes in from its leading edge, staggered inline by slot index. */
+  .pips i[data-filled="true"] {
+    transform-origin: left center;
+    animation: pip-fill 200ms var(--ease-out-expo) backwards;
+  }
+  @keyframes pip-fill {
+    from { opacity: 0.25; transform: scaleX(0); }
+    to { opacity: 1; transform: none; }
+  }
+
+  /* Each figurine enters from its own side of the stage and settles. */
+  .stage[data-entrance] .figurine { animation: fig-in-left 420ms var(--ease-out-expo) backwards; }
+  .stage[data-entrance] .figurine[data-player="2"] { animation-name: fig-in-right; }
+  @keyframes fig-in-left {
+    from { opacity: 0; transform: translateX(-140%); }
+    72% { opacity: 1; transform: translateX(5%); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes fig-in-right {
+    from { opacity: 0; transform: translateX(140%); }
+    72% { opacity: 1; transform: translateX(-5%); }
+    to { opacity: 1; transform: none; }
+  }
+
+  /* The badge slams down on each deal and throws off a shockwave ring. */
+  .vs { animation: vs-slam 320ms var(--ease-out-expo) backwards; }
+  @keyframes vs-slam {
+    from { opacity: 0; transform: scale(2.4); }
+    70% { opacity: 1; transform: scale(0.93); }
+    to { opacity: 1; transform: none; }
+  }
+  .vs::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    width: 3.25rem;
+    height: 3.25rem;
+    margin: auto;
+    border: 2px solid var(--system);
+    border-radius: 50%;
+    opacity: 0;
+    animation: vs-ring 520ms var(--ease-out-expo) 140ms both;
+  }
+  @keyframes vs-ring {
+    from { opacity: 0; transform: scale(0.25); }
+    30% { opacity: 0.7; }
+    to { opacity: 0; transform: scale(2.8); }
   }
 }
 

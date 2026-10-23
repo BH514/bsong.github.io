@@ -7,8 +7,9 @@ import { excludeTags } from '../filters.ts'
 import type { Ingredient, TagId } from '../data/types.ts'
 import { renderSvgParts } from './svg.ts'
 
-/** Spec §11: counter tiles pop in on a 40 ms stagger. */
+/** Spec §11: counter tiles pop in on a 40 ms stagger, slot pips fill in turn. */
 const TILE_STAGGER_MS = 40
+const PIP_STAGGER_MS = 70
 
 export interface StageOptions {
   readonly chefs: readonly [ChefId, ChefId]
@@ -24,6 +25,10 @@ export interface StageOptions {
 export function renderStage(options: StageOptions): HTMLElement {
   const section = document.createElement('section')
   section.className = 'stage shell'
+  // The figurines' entrance belongs to arriving on the stage, not to every
+  // deal: re-flying them in from off-stage would hide the new utensil and
+  // turn a mid-cooking utility into a title sequence.
+  if (options.round === 0) section.dataset['entrance'] = 'on'
 
   const board = document.createElement('div')
   board.className = 'board'
@@ -115,7 +120,12 @@ function renderPanel(player: 0 | 1, options: StageOptions): HTMLElement {
   const filled = hand ? hand.slots.length : 0
   for (let index = 0; index < CATEGORIES.length; index += 1) {
     const pip = document.createElement('i')
-    pip.style.opacity = index < filled ? '1' : '0.25'
+    if (index < filled) {
+      // CSS owns the filled/unfilled contrast so it survives reduced motion;
+      // the delay only sequences the fill.
+      pip.dataset['filled'] = 'true'
+      pip.style.animationDelay = `${index * PIP_STAGGER_MS}ms`
+    }
     pips.append(pip)
   }
   panel.append(pips)
