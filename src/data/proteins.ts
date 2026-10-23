@@ -20,7 +20,7 @@ export const PROTEINS = rows('protein', [
   ['mussels', 'Mussels', '🦪', ['meat', 'shellfish', 'animal']],
   ['scallops', 'Scallops', '🦪', ['meat', 'shellfish', 'animal']],
   ['crab', 'Crab', '🦀', ['meat', 'shellfish', 'animal']],
-  ['squid', 'Squid', '🦑', ['meat', 'animal']],
+  ['squid', 'Squid', '🦑', ['meat', 'shellfish', 'animal']],
   ['halloumi', 'Halloumi', '🧆', ['dairy', 'animal']],
   ['paneer', 'Paneer', '🧈', ['dairy', 'animal']],
   ['feta', 'Feta', '🧀', ['dairy', 'animal']],

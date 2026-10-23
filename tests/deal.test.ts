@@ -1,8 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { dealCounter, isFailure } from '../src/deal.ts'
+import { dealCounter, describeDealFailure, isFailure } from '../src/deal.ts'
 import { PANTRY } from '../src/data/pantry.ts'
-import { CATEGORIES, ALL_TAG_IDS } from '../src/data/categories.ts'
+import { CATEGORIES, ALL_TAG_IDS, TAG_LABELS } from '../src/data/categories.ts'
 import { createRng } from '../src/rng.ts'
 import type { Ingredient, TagId } from '../src/data/types.ts'
 
@@ -39,6 +39,24 @@ test('the counter is exactly both hands combined', () => {
   const deal = dealOrThrow()
   const fromHands = [...deal.hands[0].slots, ...deal.hands[1].slots].map((i) => i.id).sort()
   assert.deepEqual([...deal.counter].map((i) => i.id).sort(), fromHands)
+})
+
+test('the counter is ordered by category, then by player', () => {
+  const deal = dealOrThrow()
+  assert.deepEqual(
+    deal.counter.map((i) => i.category),
+    ['protein', 'protein', 'vegetable', 'vegetable', 'starch', 'starch',
+      'aromatic', 'aromatic', 'wildcard', 'wildcard'],
+  )
+  assert.deepEqual(
+    deal.counter.map((i) => i.id),
+    CATEGORIES.flatMap((category, index) => {
+      const mine = deal.hands[0].slots[index]
+      const theirs = deal.hands[1].slots[index]
+      assert.equal(mine?.category, category.id)
+      return [mine?.id, theirs?.id]
+    }),
+  )
 })
 
 test('excluded tags never appear in a deal', () => {
@@ -99,6 +117,37 @@ test('an empty category also fails rather than throwing', () => {
   assert.ok(isFailure(result))
   assert.equal(result.category, 'aromatic')
   assert.equal(result.remaining, 0)
+})
+
+test('the failure sentence names the category and the responsible chips by label', () => {
+  const sentence = describeDealFailure(
+    { kind: 'insufficient-pool', category: 'vegetable', remaining: 1 },
+    ['meat', 'nuts'],
+  )
+  assert.match(sentence, /^Vegetable has only 1 ingredient\(s\) left\./)
+  assert.match(sentence, /Turn one of these back on: Meat & fish, Nuts & seeds\./)
+})
+
+test('the failure sentence never leaks a raw tag id', () => {
+  const sentence = describeDealFailure(
+    { kind: 'insufficient-pool', category: 'wildcard', remaining: 0 },
+    ALL_TAG_IDS,
+  )
+  for (const tag of ALL_TAG_IDS) {
+    const label = TAG_LABELS.get(tag)
+    assert.ok(label, `tag ${tag} has no label`)
+    assert.ok(sentence.includes(label), `${label} is missing from the sentence`)
+    // Every label is capitalised, so a lowercase id can only be a raw leak.
+    assert.doesNotMatch(sentence, new RegExp(`\\b${tag}\\b`), `raw tag id ${tag} reached the copy`)
+  }
+})
+
+test('the failure sentence stops cleanly when nothing is excluded', () => {
+  const sentence = describeDealFailure(
+    { kind: 'insufficient-pool', category: 'aromatic', remaining: 0 },
+    [],
+  )
+  assert.equal(sentence, 'Aromatic has only 0 ingredient(s) left.')
 })
 
 test('dealing does not mutate the pantry', () => {

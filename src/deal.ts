@@ -1,5 +1,5 @@
 import type { CategoryId, Ingredient, TagId, UtensilId } from './data/types.ts'
-import { CATEGORIES } from './data/categories.ts'
+import { CATEGORIES, CATEGORY_LABELS, TAG_LABELS } from './data/categories.ts'
 import { filterPantry, type Pantry } from './filters.ts'
 import { shuffle, type Rng } from './rng.ts'
 
@@ -23,6 +23,22 @@ export type DealResult = Deal | DealFailure
 
 export function isFailure(result: DealResult): result is DealFailure {
   return 'kind' in result
+}
+
+/**
+ * The single source of the over-filtering sentence. The live region and the
+ * on-screen panel must read identically, so neither may build it themselves.
+ */
+export function describeDealFailure(
+  failure: DealFailure,
+  excluded: readonly TagId[],
+): string {
+  const category = CATEGORY_LABELS.get(failure.category) ?? failure.category
+  const shortfall = `${category} has only ${failure.remaining} ingredient(s) left.`
+  if (excluded.length === 0) return shortfall
+
+  const chips = excluded.map((tag) => TAG_LABELS.get(tag) ?? tag).join(', ')
+  return `${shortfall} Turn one of these back on: ${chips}.`
 }
 
 const FALLBACK_UTENSIL: UtensilId = 'knife'
@@ -56,7 +72,19 @@ export function dealCounter(
   }
 
   const hands: readonly [Hand, Hand] = [toHand(first), toHand(second)]
-  return { hands, counter: [...hands[0].slots, ...hands[1].slots] }
+  return { hands, counter: mergeCounter(hands) }
+}
+
+/**
+ * Category-major, player-minor: each category's two ingredients sit side by
+ * side, which is the whole point of a shared counter. Both hands already run
+ * in CATEGORIES order, so interleaving by index is enough.
+ */
+function mergeCounter(hands: readonly [Hand, Hand]): readonly Ingredient[] {
+  return hands[0].slots.flatMap((slot, index) => {
+    const opposite = hands[1].slots[index]
+    return opposite === undefined ? [slot] : [slot, opposite]
+  })
 }
 
 function toHand(slots: readonly Ingredient[]): Hand {

@@ -6,11 +6,17 @@ import './styles/stage.css'
 import { renderSelect } from './ui/select.ts'
 import { renderStage } from './ui/stage.ts'
 import { loadSaved, saveSaved, type Saved } from './storage.ts'
-import { dealCounter, isFailure, type Deal, type DealFailure } from './deal.ts'
+import {
+  dealCounter,
+  describeDealFailure,
+  isFailure,
+  type Deal,
+  type DealFailure,
+} from './deal.ts'
 import { createRng, randomSeed } from './rng.ts'
 import { filterPantry } from './filters.ts'
 import { PANTRY } from './data/pantry.ts'
-import { CATEGORIES, CATEGORY_LABELS } from './data/categories.ts'
+import { CATEGORIES } from './data/categories.ts'
 import type { ChefId } from './chefs/roster.ts'
 import type { TagId } from './data/types.ts'
 
@@ -59,10 +65,7 @@ function pantrySize(): number {
 function deal(): void {
   const result = dealCounter(PANTRY, state.saved.excluded, createRng(randomSeed()))
   if (isFailure(result)) {
-    const label = CATEGORY_LABELS.get(result.category) ?? result.category
-    announcer.textContent =
-      `${label} has only ${result.remaining} ingredient(s) left. ` +
-      `Turn one of these back on: ${state.saved.excluded.join(', ')}.`
+    announcer.textContent = describeDealFailure(result, state.saved.excluded)
     setState({ failure: result, deal: null })
     return
   }

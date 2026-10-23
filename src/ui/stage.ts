@@ -1,7 +1,7 @@
-import type { Deal, DealFailure, Hand } from '../deal.ts'
+import { describeDealFailure, type Deal, type DealFailure, type Hand } from '../deal.ts'
 import { chefById, type ChefId } from '../chefs/roster.ts'
 import { figurineParts, FIGURINE_VIEWBOX } from '../chefs/figurine.ts'
-import { CATEGORIES, CATEGORY_LABELS } from '../data/categories.ts'
+import { CATEGORIES, CATEGORY_LABELS, TAG_LABELS } from '../data/categories.ts'
 import { SHELF } from '../data/pantry.ts'
 import { excludeTags } from '../filters.ts'
 import type { Ingredient, TagId } from '../data/types.ts'
@@ -47,7 +47,8 @@ function renderHud(options: StageOptions): HTMLElement {
   pantry.textContent = String(options.pantrySize)
   meta.append('Round ', round, ' / Pantry ', pantry)
   if (options.excluded.length > 0) {
-    meta.append(` / Without ${options.excluded.join(', ')}`)
+    const labels = options.excluded.map((tag) => TAG_LABELS.get(tag) ?? tag)
+    meta.append(` / Without ${labels.join(', ')}`)
   }
 
   const logo = document.createElement('h1')
@@ -185,10 +186,7 @@ function renderCounter(options: StageOptions): HTMLElement {
     const error = document.createElement('p')
     error.className = 'deal-error'
     error.setAttribute('role', 'alert')
-    const label = CATEGORY_LABELS.get(options.failure.category) ?? options.failure.category
-    error.textContent =
-      `${label} has only ${options.failure.remaining} ingredient(s) left. ` +
-      `Turn one of these back on: ${options.excluded.join(', ')}.`
+    error.textContent = describeDealFailure(options.failure, options.excluded)
     wrapper.append(error)
   }
 

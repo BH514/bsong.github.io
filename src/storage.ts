@@ -39,12 +39,15 @@ export function parseSaved(raw: string | null): Saved {
   const rawChefs = Array.isArray(record['chefs']) ? record['chefs'] : []
   const rawExcluded = Array.isArray(record['excluded']) ? record['excluded'] : []
 
+  const excluded = rawExcluded.filter(
+    (tag): tag is TagId =>
+      typeof tag === 'string' && (ALL_TAG_IDS as readonly string[]).includes(tag),
+  )
+
   return {
     chefs: [asChefId(rawChefs[0]), asChefId(rawChefs[1])],
-    excluded: rawExcluded.filter(
-      (tag): tag is TagId =>
-        typeof tag === 'string' && (ALL_TAG_IDS as readonly string[]).includes(tag),
-    ),
+    // A hand-edited payload may repeat a tag; duplicates would reach the HUD.
+    excluded: [...new Set(excluded)],
   }
 }
 

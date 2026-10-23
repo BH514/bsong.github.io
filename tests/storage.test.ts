@@ -40,6 +40,13 @@ test('unknown tag ids are dropped', () => {
   assert.deepEqual(parsed.excluded, ['nuts'])
 })
 
+test('repeated tag ids are collapsed so the HUD cannot read "nuts, nuts"', () => {
+  const parsed = parseSaved(
+    JSON.stringify({ chefs: [null, null], excluded: ['nuts', 'nuts', 'dairy', 'nuts'] }),
+  )
+  assert.deepEqual(parsed.excluded, ['nuts', 'dairy'])
+})
+
 test('a non-array chefs field falls back to empty picks', () => {
   assert.deepEqual(parseSaved(JSON.stringify({ chefs: 'grill', excluded: [] })).chefs, [null, null])
 })

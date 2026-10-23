@@ -53,6 +53,25 @@ test('anything tagged meat or dairy is also tagged animal', () => {
   }
 })
 
+/**
+ * An explicit roll call rather than a name heuristic: "oyster mushrooms" is not
+ * an allergen and "squid" does not read as shellfish, so only a list is safe.
+ */
+const MOLLUSCS_AND_CRUSTACEANS: readonly string[] = [
+  'squid', 'mussels', 'scallops', 'crab', 'prawns', 'oyster-sauce',
+]
+
+test('every mollusc and crustacean carries the shellfish tag', () => {
+  for (const id of MOLLUSCS_AND_CRUSTACEANS) {
+    const ingredient = ALL_INGREDIENTS.find((i) => i.id === id)
+    assert.ok(ingredient, `${id} is no longer in the pantry — update this list`)
+    assert.ok(
+      ingredient.tags.includes('shellfish'),
+      `${id} is a shellfish allergen but is not tagged shellfish`,
+    )
+  }
+})
+
 test('every starch declares a utensil and nothing else does', () => {
   for (const ingredient of PANTRY.starch) {
     assert.ok(ingredient.utensil, `${ingredient.id} has no utensil`)
