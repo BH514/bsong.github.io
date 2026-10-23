@@ -10,7 +10,7 @@ import { dealCounter, isFailure, type Deal, type DealFailure } from './deal.ts'
 import { createRng, randomSeed } from './rng.ts'
 import { filterPantry } from './filters.ts'
 import { PANTRY } from './data/pantry.ts'
-import { CATEGORIES } from './data/categories.ts'
+import { CATEGORIES, CATEGORY_LABELS } from './data/categories.ts'
 import type { ChefId } from './chefs/roster.ts'
 import type { TagId } from './data/types.ts'
 
@@ -33,8 +33,6 @@ announcer.className = 'sr-only'
 announcer.setAttribute('role', 'status')
 announcer.setAttribute('aria-live', 'polite')
 document.body.append(announcer)
-
-const CATEGORY_LABELS = new Map(CATEGORIES.map((category) => [category.id, category.label]))
 
 const initial = loadSaved(window.localStorage)
 const bothPicked = initial.chefs[0] !== null && initial.chefs[1] !== null

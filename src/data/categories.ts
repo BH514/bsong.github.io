@@ -1,4 +1,4 @@
-import type { Category, TagId } from './types.ts'
+import type { Category, CategoryId, TagId } from './types.ts'
 import { TAGS } from './tags.ts'
 
 export const CATEGORIES: readonly Category[] = [
@@ -8,6 +8,10 @@ export const CATEGORIES: readonly Category[] = [
   { id: 'aromatic', label: 'Aromatic' },
   { id: 'wildcard', label: 'Wildcard' },
 ]
+
+export const CATEGORY_LABELS: ReadonlyMap<CategoryId, string> = new Map(
+  CATEGORIES.map((category) => [category.id, category.label]),
+)
 
 export const ALL_TAG_IDS: readonly TagId[] = TAGS.map((tag) => tag.id)
 

@@ -1,7 +1,7 @@
 import type { Deal, DealFailure, Hand } from '../deal.ts'
 import { chefById, type ChefId } from '../chefs/roster.ts'
 import { figurineParts, FIGURINE_VIEWBOX } from '../chefs/figurine.ts'
-import { CATEGORIES } from '../data/categories.ts'
+import { CATEGORIES, CATEGORY_LABELS } from '../data/categories.ts'
 import { SHELF } from '../data/pantry.ts'
 import { excludeTags } from '../filters.ts'
 import type { Ingredient, TagId } from '../data/types.ts'
@@ -17,8 +17,6 @@ export interface StageOptions {
   readonly onDeal: () => void
   readonly onChangeChef: (player: 0 | 1) => void
 }
-
-const CATEGORY_LABELS = new Map(CATEGORIES.map((category) => [category.id, category.label]))
 
 export function renderStage(options: StageOptions): HTMLElement {
   const section = document.createElement('section')
