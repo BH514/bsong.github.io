@@ -31,7 +31,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Test the probability model
+      - name: Test the game logic
         run: npm test
 
       - name: Install the test browser
