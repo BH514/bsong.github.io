@@ -20,6 +20,9 @@ function update(next: Saved): void {
 }
 
 function draw(): void {
+  const active = document.activeElement
+  const focusKey = active instanceof HTMLElement ? active.dataset['focusKey'] : undefined
+
   app.replaceChildren(
     renderSelect({
       chefs: saved.chefs,
@@ -40,6 +43,21 @@ function draw(): void {
       },
     }),
   )
+
+  if (focusKey !== undefined) {
+    const chefMatch = focusKey.match(/^chef-(\d+)-/)
+    if (chefMatch && chefMatch[1]) {
+      const player = parseInt(chefMatch[1], 10) as 0 | 1
+      const selectedChefId = saved.chefs[player]
+      if (selectedChefId !== null) {
+        const restored = app.querySelector<HTMLElement>(`[data-focus-key="chef-${player}-${selectedChefId}"]`)
+        restored?.focus()
+      }
+    } else {
+      const restored = app.querySelector<HTMLElement>(`[data-focus-key="${focusKey}"]`)
+      restored?.focus()
+    }
+  }
 }
 
 draw()

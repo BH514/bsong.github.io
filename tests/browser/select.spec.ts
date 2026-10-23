@@ -30,6 +30,7 @@ test('arrow keys move the selection within a radiogroup', async ({ page }) => {
   await group.getByRole('radio').first().click()
   await group.getByRole('radio').first().press('ArrowRight')
   await expect(group.getByRole('radio').nth(1)).toHaveAttribute('aria-checked', 'true')
+  await expect(group.getByRole('radio').nth(1)).toBeFocused()
 })
 
 test('diet chips toggle their pressed state', async ({ page }) => {
@@ -38,6 +39,15 @@ test('diet chips toggle their pressed state', async ({ page }) => {
   await expect(chip).toHaveAttribute('aria-pressed', 'false')
   await chip.click()
   await expect(chip).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('a chip keeps focus after being toggled', async ({ page }) => {
+  await page.goto('/')
+  const chip = page.getByRole('button', { name: /^dairy$/i })
+  await chip.focus()
+  await chip.press('Enter')
+  await expect(chip).toHaveAttribute('aria-pressed', 'true')
+  await expect(chip).toBeFocused()
 })
 
 test('chef picks and chips survive a reload', async ({ page }) => {

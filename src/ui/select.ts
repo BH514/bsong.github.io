@@ -63,6 +63,7 @@ function renderChips(options: SelectOptions): HTMLElement {
     chip.type = 'button'
     chip.textContent = tag.label
     chip.setAttribute('aria-pressed', String(options.excluded.includes(tag.id)))
+    chip.dataset.focusKey = `chip-${tag.id}`
     chip.addEventListener('click', () => options.onToggleTag(tag.id))
     chips.append(chip)
   }
@@ -111,6 +112,7 @@ function renderChefOption(
   option.setAttribute('role', 'radio')
   option.setAttribute('aria-checked', String(selected))
   option.tabIndex = selected || (unpicked && index === 0) ? 0 : -1
+  option.dataset.focusKey = `chef-${player}-${chef.id}`
 
   option.append(renderSvgParts(figurineParts(chef, 'knife'), FIGURINE_VIEWBOX))
 
@@ -137,6 +139,7 @@ function renderStart(options: SelectOptions): HTMLElement {
   start.type = 'button'
   start.textContent = 'To the kitchen'
   start.disabled = options.chefs[0] === null || options.chefs[1] === null
+  start.dataset.focusKey = 'start'
   start.addEventListener('click', options.onStart)
   return start
 }
