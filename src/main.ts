@@ -1,63 +1,132 @@
 import './styles/tokens.css'
 import './styles/global.css'
 import './styles/select.css'
+import './styles/stage.css'
 
 import { renderSelect } from './ui/select.ts'
+import { renderStage } from './ui/stage.ts'
 import { loadSaved, saveSaved, type Saved } from './storage.ts'
+import { dealCounter, isFailure, type Deal, type DealFailure } from './deal.ts'
+import { createRng, randomSeed } from './rng.ts'
+import { filterPantry } from './filters.ts'
+import { PANTRY } from './data/pantry.ts'
+import { CATEGORIES } from './data/categories.ts'
 import type { ChefId } from './chefs/roster.ts'
 import type { TagId } from './data/types.ts'
+
+type Screen = 'select' | 'stage'
+
+interface State {
+  readonly screen: Screen
+  readonly saved: Saved
+  readonly deal: Deal | null
+  readonly failure: DealFailure | null
+  readonly round: number
+}
 
 const root = document.querySelector<HTMLElement>('#app')
 if (!root) throw new Error('#app is missing from index.html')
 const app: HTMLElement = root
 
-let saved: Saved = loadSaved(window.localStorage)
+const initial = loadSaved(window.localStorage)
+const bothPicked = initial.chefs[0] !== null && initial.chefs[1] !== null
 
-function update(next: Saved): void {
-  saved = next
-  saveSaved(window.localStorage, saved)
-  draw()
+let state: State = {
+  screen: bothPicked ? 'stage' : 'select',
+  saved: initial,
+  deal: null,
+  failure: null,
+  round: 0,
 }
 
-function draw(): void {
+function setState(next: Partial<State>): void {
+  state = { ...state, ...next }
+  if (next.saved) saveSaved(window.localStorage, next.saved)
+  render()
+}
+
+function pantrySize(): number {
+  const available = filterPantry(PANTRY, state.saved.excluded)
+  return CATEGORIES.reduce((total, category) => total + available[category.id].length, 0)
+}
+
+function deal(): void {
+  const result = dealCounter(PANTRY, state.saved.excluded, createRng(randomSeed()))
+  if (isFailure(result)) {
+    setState({ failure: result, deal: null })
+    return
+  }
+  setState({ deal: result, failure: null, round: state.round + 1 })
+}
+
+function renderSelectScreen(): void {
+  app.replaceChildren(
+    renderSelect({
+      chefs: state.saved.chefs,
+      excluded: state.saved.excluded,
+      onPickChef: (player, chef: ChefId) => {
+        const chefs: [ChefId | null, ChefId | null] = [state.saved.chefs[0], state.saved.chefs[1]]
+        chefs[player] = chef
+        setState({ saved: { ...state.saved, chefs } })
+      },
+      onToggleTag: (tag: TagId) => {
+        const excluded = state.saved.excluded.includes(tag)
+          ? state.saved.excluded.filter((item) => item !== tag)
+          : [...state.saved.excluded, tag]
+        setState({ saved: { ...state.saved, excluded }, deal: null, failure: null })
+      },
+      onStart: () => setState({ screen: 'stage' }),
+    }),
+  )
+}
+
+function renderStageScreen(first: ChefId, second: ChefId): void {
+  app.replaceChildren(
+    renderStage({
+      chefs: [first, second],
+      deal: state.deal,
+      failure: state.failure,
+      excluded: state.saved.excluded,
+      round: state.round,
+      pantrySize: pantrySize(),
+      onDeal: deal,
+      onChangeChef: () => setState({ screen: 'select' }),
+    }),
+  )
+}
+
+function render(): void {
   const active = document.activeElement
   const focusKey = active instanceof HTMLElement ? active.dataset['focusKey'] : undefined
 
-  app.replaceChildren(
-    renderSelect({
-      chefs: saved.chefs,
-      excluded: saved.excluded,
-      onPickChef: (player, chef: ChefId) => {
-        const chefs: [ChefId | null, ChefId | null] = [saved.chefs[0], saved.chefs[1]]
-        chefs[player] = chef
-        update({ ...saved, chefs })
-      },
-      onToggleTag: (tag: TagId) => {
-        const excluded = saved.excluded.includes(tag)
-          ? saved.excluded.filter((item) => item !== tag)
-          : [...saved.excluded, tag]
-        update({ ...saved, excluded })
-      },
-      onStart: () => {
-        // Task 9 wires the stage.
-      },
-    }),
-  )
-
-  if (focusKey !== undefined) {
-    const chefMatch = focusKey.match(/^chef-(\d+)-/)
-    if (chefMatch && chefMatch[1]) {
-      const player = parseInt(chefMatch[1], 10) as 0 | 1
-      const selectedChefId = saved.chefs[player]
-      if (selectedChefId !== null) {
-        const restored = app.querySelector<HTMLElement>(`[data-focus-key="chef-${player}-${selectedChefId}"]`)
-        restored?.focus()
-      }
-    } else {
-      const restored = app.querySelector<HTMLElement>(`[data-focus-key="${focusKey}"]`)
-      restored?.focus()
+  if (state.screen === 'select') {
+    renderSelectScreen()
+  } else {
+    const [first, second] = state.saved.chefs
+    if (first === null || second === null) {
+      setState({ screen: 'select' })
+      return
     }
+    renderStageScreen(first, second)
   }
+
+  restoreFocus(focusKey)
 }
 
-draw()
+function restoreFocus(focusKey: string | undefined): void {
+  if (focusKey === undefined) return
+
+  const chefMatch = focusKey.match(/^chef-(\d+)-/)
+  if (chefMatch && chefMatch[1]) {
+    const player = Number(chefMatch[1])
+    const selected = state.saved.chefs[player]
+    if (selected) {
+      app.querySelector<HTMLElement>(`[data-focus-key="chef-${player}-${selected}"]`)?.focus()
+    }
+    return
+  }
+
+  app.querySelector<HTMLElement>(`[data-focus-key="${focusKey}"]`)?.focus()
+}
+
+render()
