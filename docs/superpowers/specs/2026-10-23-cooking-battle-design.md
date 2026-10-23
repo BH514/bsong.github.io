@@ -262,6 +262,16 @@ example: *"Vegetable has only 1 ingredient left — turn off **nuts** or
 or tag ids are discarded rather than trusted, and corrupt JSON falls back to
 defaults without surfacing an error.
 
+**This path is unreachable with the shipped pantry.** Every category keeps at
+least two ingredients carrying no tags at all, and `tests/deal.test.ts` asserts
+exactly that — dealing still succeeds with all eight exclusions on. So the
+failure panel, the live-region announcement and the disabled Deal button are
+defensive only: no browser test can reach them, and the browser suite's silence
+about them is not coverage. The sentence itself is covered directly, as a unit
+test on `describeDealFailure`, which is the only way to test it at all. The path
+stays in because a future pantry edit could narrow a category, and because a
+silent empty state would be worse.
+
 ## 10. Accessibility
 
 - Semantic landmarks (`header`, `main`, `section`), one `h1`, skip link.
@@ -277,12 +287,23 @@ defaults without surfacing an error.
 
 ## 11. Motion
 
-All motion is restricted to `transform`, `opacity` and `filter`.
+Motion is restricted to compositor-friendly and paint-only properties:
+`transform`, `opacity` and `filter` for animation, plus cheap paint-only
+properties such as `background` and `border-color` for the chip and button
+hover transitions.
+
+Layout-bound properties remain banned outright, because animating them forces
+reflow: `width`, `height`, `top`, `left`, `margin`, `padding`, `border` width
+and `font-size`.
 
 - Figurines slide in from the outer edges and settle.
 - Slot pips fill sequentially.
 - VS badge slams with a shockwave ring.
 - Counter tiles pop in on a 40 ms stagger.
+
+The figurine entrance belongs to arriving on the stage, not to every deal —
+re-flying them in would hide the newly dealt utensil. The badge slam, the pips
+and the tiles play on each deal, which is each new round.
 
 Under `prefers-reduced-motion: reduce`, every animation and transition is
 removed and the deal renders instantly.
